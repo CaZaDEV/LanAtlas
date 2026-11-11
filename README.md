@@ -21,7 +21,15 @@ Self-hosted inventory for the computers, printers, machines and network devices 
 
 ## Quick start
 
-### Docker (Linux host, recommended)
+### Double-click (Windows)
+
+Install [Node.js](https://nodejs.org) 20.12+ (LTS), download or clone this repository and double-click **`LanAtlas.cmd`**. The first run installs and builds (a couple of minutes); after that it starts in seconds, opens the browser, and if LanAtlas is already running it just opens the browser. The server runs in a minimized window called *LanAtlas - servidor*: close it to stop LanAtlas. Data is stored in `.\data`.
+
+Prefer an `.exe` with an icon? Run `powershell -ExecutionPolicy Bypass -File scripts\build-launcher.ps1` once: it compiles `LanAtlas.exe` (no console window) with the C# compiler included in Windows. Pin it to the taskbar or create a desktop shortcut.
+
+On Linux/macOS: `./start.sh`.
+
+### Docker (Linux host, recommended for servers)
 
 ```bash
 git clone https://github.com/<you>/lanatlas.git

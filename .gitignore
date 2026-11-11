@@ -14,3 +14,6 @@ secret.key
 Thumbs.db
 .vscode/
 .idea/
+
+# Launcher compilat (scripts/build-launcher.ps1)
+LanAtlas.exe
