@@ -1,0 +1,54 @@
+/* Etiquetes HTML del mapa 3D d'Equips (CSS2DRenderer). */
+.eq-map-room {
+  font: 700 11px/1 system-ui, sans-serif;
+  letter-spacing: 0.04em;
+  color: #475569;
+  text-transform: uppercase;
+  white-space: nowrap;
+  text-shadow: 0 0 3px #fff, 0 0 3px #fff;
+}
+
+.eq-map-note {
+  font: 500 10px/1 system-ui, sans-serif;
+  color: #64748b;
+  white-space: nowrap;
+  text-shadow: 0 0 3px #fff;
+}
+
+.eq-map-code {
+  font: 600 9px/1 ui-monospace, monospace;
+  color: #b45309;
+  background: rgb(255 255 255 / 0.75);
+  border-radius: 3px;
+  padding: 1px 2px;
+}
+
+.eq-map-tag {
+  font: 600 11px/1.2 system-ui, sans-serif;
+  color: #0f172a;
+  background: #fff;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  padding: 2px 6px;
+  white-space: nowrap;
+  box-shadow: 0 1px 3px rgb(15 23 42 / 0.15);
+}
+
+.eq-map-tag-down {
+  color: #fff;
+  background: #dc2626;
+  border-color: #b91c1c;
+}
+
+.eq-map-tag-selected {
+  outline: 2px solid #1d4ed8;
+}
+
+.eq-map-ghost {
+  font: 700 11px/1 system-ui, sans-serif;
+  color: #fff;
+  background: #1d4ed8;
+  border-radius: 6px;
+  padding: 3px 6px;
+  white-space: nowrap;
+}

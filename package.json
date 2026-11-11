@@ -1,0 +1,27 @@
+{
+  "name": "lanatlas",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Inventari d'equips i xarxa autoallotjat: IPs, rastreig i identificació, llicències, credencials xifrades, monitoratge i mapa 3D editable.",
+  "license": "MIT",
+  "workspaces": [
+    "server",
+    "web"
+  ],
+  "scripts": {
+    "build": "npm run build -w web && npm run build -w server",
+    "start": "npm run start -w server",
+    "dev": "npm run dev -w server",
+    "dev:web": "npm run dev -w web",
+    "test": "npm test -w server"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "allowScripts": {
+    "@prisma/client@5.22.0": true,
+    "@prisma/engines@5.22.0": true,
+    "esbuild@0.21.5": true,
+    "prisma@5.22.0": true
+  }
+}

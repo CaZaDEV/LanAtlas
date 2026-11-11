@@ -1,0 +1,23 @@
+# docker compose up -d   →   http://<server>:8080
+#
+# network_mode: host lets LanAtlas see the LAN directly (ping, NetBIOS, mDNS, SNMP, MAC addresses).
+# It only works on Linux hosts; on Docker Desktop (Windows/macOS) remove it and use "ports".
+#
+# LanAtlas has no login. With HOST=0.0.0.0 anybody who reaches the port can see and change
+# everything (including encrypted passwords, which can be revealed). Put it behind a reverse proxy
+# with authentication, a VPN, or keep HOST=127.0.0.1 and use an SSH tunnel. See README.
+services:
+  lanatlas:
+    build: .
+    image: lanatlas:latest
+    container_name: lanatlas
+    restart: unless-stopped
+    network_mode: host
+    environment:
+      HOST: 127.0.0.1          # change to 0.0.0.0 only behind a proxy / firewall
+      PORT: 8080
+      # ALLOWED_HOSTS: lanatlas.example.lan
+      # APP_TIMEZONE: Europe/Madrid
+      # LANATLAS_SECRET_KEY: ...   (otherwise generated in ./data/secret.key)
+    volumes:
+      - ./data:/data

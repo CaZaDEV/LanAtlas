@@ -1,0 +1,277 @@
+// LanAtlas: inventari d'equips i xarxa, llicències, credencials, proves, alertes i mapa 3D.
+// SQLite (un sol fitxer a DATA_DIR). Els "enums" són text: els valida el DTO.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ── Equips ────────────────────────────────────────────────────────────────
+
+model EquipmentType {
+  id        String      @id @default(cuid())
+  name      String      @unique
+  // Nom d'icona Lucide en kebab-case (monitor, printer, factory…).
+  icon      String      @default("box")
+  color     String      @default("#475569")
+  position  Int         @default(0)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  equipment Equipment[]
+}
+
+model Equipment {
+  id             String    @id @default(cuid())
+  // Número intern («50» per al PC50). Es pot repetir: és un avís, no un error.
+  number         String?
+  name           String
+  typeId         String
+  type           EquipmentType @relation(fields: [typeId], references: [id], onDelete: Restrict)
+  brand          String?
+  model          String?
+  serial         String?
+  // «2016-05». Text: molts equips només tenen mes i any.
+  acquired       String?
+  price          Float?
+  location       String?
+  os             String?
+  // Persona que el fa servir («Anna», «Compartit»…).
+  assignedName   String?
+  // COMPANY | PERSONAL
+  ownership      String    @default("COMPANY")
+  // ACTIVE | SPARE | RETIRED
+  status         String    @default("ACTIVE")
+  // Crític: si cau, s'avisa (webhooks).
+  critical       Boolean   @default(false)
+  notes          String?
+  needsReview    Boolean   @default(false)
+  reviewNote     String?
+  // Punt en un mapa 3D (metres; null = sense ubicar), el mapa i, si s'ha posat sobre un element amb codi, el codi.
+  mapId          String?
+  map            MapPlan?  @relation(fields: [mapId], references: [id], onDelete: SetNull)
+  mapX           Float?
+  mapY           Float?
+  mapCode        String?
+  createdByName  String
+  updatedByName  String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  addresses EquipmentAddress[]
+  software  EquipmentSoftware[]
+  licenses  EquipmentLicenseAssignment[]
+  secrets   EquipmentSecret[]
+  checks    EquipmentCheck[]
+  alerts    EquipmentAlert[]
+
+  @@index([typeId])
+  @@index([number])
+  @@index([mapId])
+}
+
+model EquipmentAddress {
+  id          String    @id @default(cuid())
+  equipmentId String
+  equipment   Equipment @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
+  position    Int       @default(0)
+  // IPv4 normalitzada o nom de host. Buida amb DHCP.
+  ip          String?
+  // STATIC | DHCP
+  mode        String    @default("STATIC")
+  label       String?
+  mac         String?
+
+  @@index([equipmentId])
+  @@index([ip])
+}
+
+model EquipmentSoftware {
+  id          String    @id @default(cuid())
+  equipmentId String
+  equipment   Equipment @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
+  position    Int       @default(0)
+  name        String
+  version     String?
+  notes       String?
+
+  @@index([equipmentId])
+}
+
+model EquipmentLicense {
+  id            String    @id @default(cuid())
+  product       String
+  version       String?
+  // PERPETUAL | SUBSCRIPTION | OEM | FLOATING | FIXED | OTHER
+  kind          String    @default("OTHER")
+  // Places (simultànies si és FLOATING). Null = no se sap.
+  seats         Int?
+  // Clau xifrada (AES-256-GCM) i pista visible («…488»).
+  keyCipher     String?
+  keyHint       String?
+  vendor        String?
+  purchasedAt   DateTime?
+  expiresAt     DateTime?
+  cost          Float?
+  notes         String?
+  createdByName String
+  updatedByName String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  assignments   EquipmentLicenseAssignment[]
+  alerts        EquipmentAlert[]
+
+  @@index([product])
+}
+
+model EquipmentLicenseAssignment {
+  licenseId   String
+  license     EquipmentLicense @relation(fields: [licenseId], references: [id], onDelete: Cascade)
+  equipmentId String
+  equipment   Equipment        @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
+  createdAt   DateTime         @default(now())
+
+  @@id([licenseId, equipmentId])
+  @@index([equipmentId])
+}
+
+model EquipmentSecret {
+  id            String    @id @default(cuid())
+  equipmentId   String
+  equipment     Equipment @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
+  label         String
+  username      String?
+  valueCipher   String
+  notes         String?
+  createdByName String
+  updatedByName String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([equipmentId])
+}
+
+model EquipmentCheck {
+  id               String    @id @default(cuid())
+  equipmentId      String
+  equipment        Equipment @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
+  // PING | TCP | HTTP
+  kind             String
+  // Buit = la primera IP fixa de l'equip.
+  target           String?
+  port             Int?
+  // HTTP: URL completa (si és buida, http://<target>/).
+  url              String?
+  intervalSec      Int       @default(300)
+  failThreshold    Int       @default(3)
+  enabled          Boolean   @default(true)
+  // UNKNOWN | UP | DOWN
+  state            String    @default("UNKNOWN")
+  stateSince       DateTime?
+  consecutiveFails Int       @default(0)
+  lastRunAt        DateTime?
+  lastOk           Boolean?
+  lastLatencyMs    Int?
+  lastError        String?
+  certExpiresAt    DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  daily  EquipmentCheckDaily[]
+  events EquipmentCheckEvent[]
+  alerts EquipmentAlert[]
+
+  @@index([equipmentId])
+  @@index([enabled, lastRunAt])
+}
+
+model EquipmentCheckDaily {
+  checkId      String
+  check        EquipmentCheck @relation(fields: [checkId], references: [id], onDelete: Cascade)
+  // Mitjanit (UTC) del dia local.
+  day          DateTime
+  okCount      Int            @default(0)
+  failCount    Int            @default(0)
+  latencySumMs Int            @default(0)
+
+  @@id([checkId, day])
+}
+
+model EquipmentCheckEvent {
+  id      String         @id @default(cuid())
+  checkId String
+  check   EquipmentCheck @relation(fields: [checkId], references: [id], onDelete: Cascade)
+  at      DateTime       @default(now())
+  state   String
+  error   String?
+
+  @@index([checkId, at])
+}
+
+model EquipmentAlert {
+  id          String            @id @default(cuid())
+  kind        String
+  // Clau de deduplicació («DOWN:<equipId>», «IP_DUPLICATE:192.168.1.5»…): una sola oberta per clau.
+  key         String
+  equipmentId String?
+  equipment   Equipment?        @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
+  licenseId   String?
+  license     EquipmentLicense? @relation(fields: [licenseId], references: [id], onDelete: Cascade)
+  checkId     String?
+  check       EquipmentCheck?   @relation(fields: [checkId], references: [id], onDelete: SetNull)
+  message     String
+  openedAt    DateTime          @default(now())
+  closedAt    DateTime?
+  ackedAt     DateTime?
+  ackedByName String?
+
+  @@index([key, closedAt])
+  @@index([closedAt, openedAt])
+}
+
+model EquipmentSettings {
+  id              String   @id @default("default")
+  // JSON: [{ "name": "Oficina", "cidr": "192.168.1.0/24" } | { "name": "…", "from": "…", "to": "…" }]
+  managedRanges   String   @default("[]")
+  // JSON: [{ "from": "192.168.1.100", "to": "192.168.1.199" }]
+  dhcpRanges      String   @default("[]")
+  // JSON: [{ "url": "https://…", "format": "json" | "ntfy" }]
+  webhooks        String   @default("[]")
+  licenseWarnDays Int      @default(30)
+  certWarnDays    Int      @default(21)
+  currency        String   @default("EUR")
+  updatedByName   String?
+  updatedAt       DateTime @updatedAt
+}
+
+// ── Mapes 3D ──────────────────────────────────────────────────────────────
+
+model MapPlan {
+  id            String      @id @default(cuid())
+  name          String
+  position      Int         @default(0)
+  // JSON de l'escena editable (vegeu web/src/features/equipment/map/scene.ts).
+  scene         String      @default("{\"version\":1,\"layers\":[],\"elements\":[]}")
+  createdByName String
+  updatedByName String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  equipment     Equipment[]
+  assets        MapAsset[]
+}
+
+// Fitxers pujats per a un mapa (models 3D, imatges de fons). El contingut és a DATA_DIR/assets/<id>.
+model MapAsset {
+  id        String   @id @default(cuid())
+  mapId     String
+  map       MapPlan  @relation(fields: [mapId], references: [id], onDelete: Cascade)
+  fileName  String
+  mime      String
+  size      Int
+  createdAt DateTime @default(now())
+
+  @@index([mapId])
+}
